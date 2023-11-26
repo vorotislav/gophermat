@@ -30,8 +30,29 @@ func NewHandler(log *zap.Logger, gmart gmart) *Handler {
 	}
 }
 
-func (h *Handler) GetOrders(_ context.Context) (api.GetOrdersRes, error) {
-	return nil, nil
+func (h *Handler) GetOrders(ctx context.Context) (api.GetOrdersRes, error) {
+	orders, err := h.gmart.GetOrders(ctx)
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			return &api.GetOrdersNoContent{}, nil
+		}
+
+		return &api.GetOrdersInternalServerError{}, err
+	}
+
+	result := make(api.GetOrdersOKApplicationJSON, 0, len(orders))
+	for _, o := range orders {
+		ro := api.GetOrdersOKItem{
+			Number:     api.NewOptString(o.Number),
+			Status:     api.NewOptString(o.Status),
+			Accrual:    api.NewOptInt(o.Accrual),
+			UploadedAt: api.NewOptDateTime(o.UploadedAt),
+		}
+
+		result = append(result, ro)
+	}
+
+	return &result, nil
 }
 
 func (h *Handler) LoadOrder(ctx context.Context, req api.LoadOrderReq) (api.LoadOrderRes, error) {

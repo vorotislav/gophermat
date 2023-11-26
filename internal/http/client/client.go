@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"go.uber.org/zap"
@@ -30,8 +31,8 @@ func NewClient(log *zap.Logger, set *settings.Settings) *Client {
 	return c
 }
 
-func (c *Client) GetOrderAccrual(orderNumber string) (models.OrderAccrual, error) {
-	req, err := http.NewRequest(http.MethodGet, c.serverURL+"/"+orderNumber, http.NoBody)
+func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (models.OrderAccrual, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.serverURL+"/"+orderNumber, http.NoBody)
 	if err != nil {
 		return models.OrderAccrual{}, fmt.Errorf("cannot prepare request: %w", err)
 	}

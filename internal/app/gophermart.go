@@ -23,6 +23,7 @@ type storage interface {
 	GetOrder(ctx context.Context, orderNumber string) (models.Order, error)
 	SaveOrder(ctx context.Context, order models.Order) error
 	GetOrders(ctx context.Context, userID int) ([]models.Order, error)
+	UpdateOrder(ctx context.Context, orderNumber, status string, accrual int) error
 }
 
 type authorizer interface {
@@ -30,7 +31,7 @@ type authorizer interface {
 }
 
 type accrualClient interface {
-	GetOrderAccrual(orderNumber string) (models.OrderAccrual, error)
+	GetOrderAccrual(ctx context.Context, orderNumber string) (models.OrderAccrual, error)
 }
 
 type GMart struct {
@@ -133,16 +134,9 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 		return models.ErrOrderUploadedAnotherUser
 	}
 
-	accrual, err := gm.client.GetOrderAccrual(orderNumber)
-	if err != nil {
-		return err
-	}
-
 	o := models.Order{
 		UserID:     tokenPayload.UserID,
 		Number:     orderNumber,
-		Status:     accrual.Status,
-		Accrual:    accrual.Accrual * 100,
 		UploadedAt: time.Now(),
 	}
 
@@ -150,6 +144,8 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	if err != nil {
 		return err
 	}
+
+	go gm.getOrderAccrual(orderNumber)
 
 	return nil
 }
@@ -167,6 +163,27 @@ func (gm *GMart) GetOrders(ctx context.Context) ([]models.Order, error) {
 	}
 
 	return orders, nil
+}
+
+func (gm *GMart) getOrderAccrual(orderNumber string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	accrual, err := gm.client.GetOrderAccrual(ctx, orderNumber)
+	if err != nil {
+		gm.log.Error("cannot get order accrual", zap.Error(err))
+
+		return
+	}
+
+	err = gm.storage.UpdateOrder(ctx, orderNumber, accrual.Status, accrual.Accrual)
+	if err != nil {
+		gm.log.Error("cannot update order accrual", zap.Error(err))
+
+		return
+	}
+
+	gm.log.Info("order successful updated", zap.String("order number", orderNumber))
 }
 
 func payloadFromContext(ctx context.Context) (models.TokenPayload, error) {
