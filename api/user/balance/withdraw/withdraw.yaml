@@ -1,0 +1,31 @@
+post:
+  tags:
+    - withdraw
+  operationId: deductPoints
+  security:
+    - BearerAuth: [ ]
+  requestBody:
+    description: Deduct points for payment of the order
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            order:
+              type: string
+            sum:
+              type: number
+          required:
+            - order
+            - sum
+  responses:
+    '200':
+      description: Points have been successfully debited
+    '401':
+      description: User is not authentication
+    '402':
+      description: There are not enough funds in the account
+    '422':
+      description: Invalid order format
+    '500':
+      description: Internal server error

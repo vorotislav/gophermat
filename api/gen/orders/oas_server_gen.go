@@ -11,7 +11,7 @@ type Handler interface {
 	// GetOrders implements getOrders operation.
 	//
 	// GET /api/user/orders
-	GetOrders(ctx context.Context) ([]GetOrdersOKItem, error)
+	GetOrders(ctx context.Context) (GetOrdersRes, error)
 	// LoadOrder implements loadOrder operation.
 	//
 	// POST /api/user/orders

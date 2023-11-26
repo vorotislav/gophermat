@@ -16,7 +16,7 @@ var _ Handler = UnimplementedHandler{}
 // GetOrders implements getOrders operation.
 //
 // GET /api/user/orders
-func (UnimplementedHandler) GetOrders(ctx context.Context) (r []GetOrdersOKItem, _ error) {
+func (UnimplementedHandler) GetOrders(ctx context.Context) (r GetOrdersRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

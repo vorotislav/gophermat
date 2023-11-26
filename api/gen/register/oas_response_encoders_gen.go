@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/go-faster/errors"
-	"github.com/go-faster/jx"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -15,14 +14,9 @@ func encodeRegisterUserResponse(response RegisterUserRes, w http.ResponseWriter,
 	switch response := response.(type) {
 	case *RegisterUserOK:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Authorization", response.Data.Value.Token.Value)
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
 
 		return nil
 

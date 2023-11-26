@@ -10,9 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	apiLogin "gophermat/api/gen/login"
 	apiOrders "gophermat/api/gen/orders"
-	apiRegister "gophermat/api/gen/register"
 	"gophermat/internal/http/handlers/api/login"
 	"gophermat/internal/http/handlers/api/register"
 	"gophermat/internal/settings"
@@ -100,25 +98,17 @@ func createRoutes(log *zap.Logger, gmart gmart, auth authorizer) ([]Route, error
 	routes := make([]Route, 0)
 
 	lh := login.NewHandler(log, gmart)
-	lr, err := apiLogin.NewServer(lh)
-	if err != nil {
-		return nil, err
-	}
 
 	routes = append(routes, Route{
 		Pattern: APIPathPrefix + login.APILoginPath,
-		Handler: lr,
+		Handler: http.HandlerFunc(lh.Login),
 	})
 
 	rh := register.NewHandler(log, gmart)
-	rr, err := apiRegister.NewServer(rh)
-	if err != nil {
-		return nil, err
-	}
 
 	routes = append(routes, Route{
 		Pattern: APIPathPrefix + register.APIRegisterPath,
-		Handler: rr,
+		Handler: http.HandlerFunc(rh.Register),
 	})
 
 	oh := orders.NewHandler(log, gmart)

@@ -1,0 +1,22 @@
+get:
+  tags:
+    - withdraws
+  operationId: getWithdraws
+  security:
+    - BearerAuth: [ ]
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                order:
+                  type: string
+                sum:
+                  type: number
+                processed_at:
+                  type: string
+                  format: date-time

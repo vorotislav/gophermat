@@ -30,7 +30,7 @@ func NewHandler(log *zap.Logger, gmart gmart) *Handler {
 	}
 }
 
-func (h *Handler) GetOrders(_ context.Context) ([]api.GetOrdersOKItem, error) {
+func (h *Handler) GetOrders(_ context.Context) (api.GetOrdersRes, error) {
 	return nil, nil
 }
 

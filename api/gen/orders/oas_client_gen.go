@@ -26,7 +26,7 @@ type Invoker interface {
 	// GetOrders invokes getOrders operation.
 	//
 	// GET /api/user/orders
-	GetOrders(ctx context.Context) ([]GetOrdersOKItem, error)
+	GetOrders(ctx context.Context) (GetOrdersRes, error)
 	// LoadOrder invokes loadOrder operation.
 	//
 	// POST /api/user/orders
@@ -86,12 +86,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // GetOrders invokes getOrders operation.
 //
 // GET /api/user/orders
-func (c *Client) GetOrders(ctx context.Context) ([]GetOrdersOKItem, error) {
+func (c *Client) GetOrders(ctx context.Context) (GetOrdersRes, error) {
 	res, err := c.sendGetOrders(ctx)
 	return res, err
 }
 
-func (c *Client) sendGetOrders(ctx context.Context) (res []GetOrdersOKItem, err error) {
+func (c *Client) sendGetOrders(ctx context.Context) (res GetOrdersRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getOrders"),
 		semconv.HTTPMethodKey.String("GET"),

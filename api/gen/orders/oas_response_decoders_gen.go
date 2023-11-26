@@ -14,7 +14,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func decodeGetOrdersResponse(resp *http.Response) (res []GetOrdersOKItem, _ error) {
+func decodeGetOrdersResponse(resp *http.Response) (res GetOrdersRes, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -30,17 +30,9 @@ func decodeGetOrdersResponse(resp *http.Response) (res []GetOrdersOKItem, _ erro
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response []GetOrdersOKItem
+			var response GetOrdersOKApplicationJSON
 			if err := func() error {
-				response = make([]GetOrdersOKItem, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem GetOrdersOKItem
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					response = append(response, elem)
-					return nil
-				}); err != nil {
+				if err := response.Decode(d); err != nil {
 					return err
 				}
 				if err := d.Skip(); err != io.EOF {
@@ -57,17 +49,26 @@ func decodeGetOrdersResponse(resp *http.Response) (res []GetOrdersOKItem, _ erro
 			}
 			// Validate response.
 			if err := func() error {
-				if response == nil {
-					return errors.New("nil is invalid value")
+				if err := response.Validate(); err != nil {
+					return err
 				}
 				return nil
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	case 204:
+		// Code 204.
+		return &GetOrdersNoContent{}, nil
+	case 401:
+		// Code 401.
+		return &GetOrdersUnauthorized{}, nil
+	case 500:
+		// Code 500.
+		return &GetOrdersInternalServerError{}, nil
 	}
 	return res, validate.UnexpectedStatusCode(resp.StatusCode)
 }

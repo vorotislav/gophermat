@@ -21,6 +21,20 @@ func (s *BearerAuth) SetToken(val string) {
 	s.Token = val
 }
 
+// GetOrdersInternalServerError is response for GetOrders operation.
+type GetOrdersInternalServerError struct{}
+
+func (*GetOrdersInternalServerError) getOrdersRes() {}
+
+// GetOrdersNoContent is response for GetOrders operation.
+type GetOrdersNoContent struct{}
+
+func (*GetOrdersNoContent) getOrdersRes() {}
+
+type GetOrdersOKApplicationJSON []GetOrdersOKItem
+
+func (*GetOrdersOKApplicationJSON) getOrdersRes() {}
+
 type GetOrdersOKItem struct {
 	Number     OptString   `json:"number"`
 	Status     OptString   `json:"status"`
@@ -67,6 +81,11 @@ func (s *GetOrdersOKItem) SetAccrual(val OptInt) {
 func (s *GetOrdersOKItem) SetUploadedAt(val OptDateTime) {
 	s.UploadedAt = val
 }
+
+// GetOrdersUnauthorized is response for GetOrders operation.
+type GetOrdersUnauthorized struct{}
+
+func (*GetOrdersUnauthorized) getOrdersRes() {}
 
 // LoadOrderAccepted is response for LoadOrder operation.
 type LoadOrderAccepted struct{}

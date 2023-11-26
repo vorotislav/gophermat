@@ -50,3 +50,9 @@ get:
                   type: string
                   format: date-time
                   example: '2023-01-01T00:00:00Z'
+    '204':
+      description: No data
+    '401':
+      description: User is not authentication
+    '500':
+      description: Internal server error

@@ -11,6 +11,56 @@ import (
 	"github.com/ogen-go/ogen/json"
 )
 
+// Encode encodes GetOrdersOKApplicationJSON as json.
+func (s GetOrdersOKApplicationJSON) Encode(e *jx.Encoder) {
+	unwrapped := []GetOrdersOKItem(s)
+
+	e.ArrStart()
+	for _, elem := range unwrapped {
+		elem.Encode(e)
+	}
+	e.ArrEnd()
+}
+
+// Decode decodes GetOrdersOKApplicationJSON from json.
+func (s *GetOrdersOKApplicationJSON) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode GetOrdersOKApplicationJSON to nil")
+	}
+	var unwrapped []GetOrdersOKItem
+	if err := func() error {
+		unwrapped = make([]GetOrdersOKItem, 0)
+		if err := d.Arr(func(d *jx.Decoder) error {
+			var elem GetOrdersOKItem
+			if err := elem.Decode(d); err != nil {
+				return err
+			}
+			unwrapped = append(unwrapped, elem)
+			return nil
+		}); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = GetOrdersOKApplicationJSON(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s GetOrdersOKApplicationJSON) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *GetOrdersOKApplicationJSON) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *GetOrdersOKItem) Encode(e *jx.Encoder) {
 	e.ObjStart()

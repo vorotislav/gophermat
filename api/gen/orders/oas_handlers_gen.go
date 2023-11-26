@@ -105,7 +105,7 @@ func (s *Server) handleGetOrdersRequest(args [0]string, argsEscaped bool, w http
 		}
 	}
 
-	var response []GetOrdersOKItem
+	var response GetOrdersRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -120,7 +120,7 @@ func (s *Server) handleGetOrdersRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = []GetOrdersOKItem
+			Response = GetOrdersRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
