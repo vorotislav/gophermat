@@ -194,3 +194,14 @@ func (s *Storage) GetOrders(ctx context.Context, userID int) ([]models.Order, er
 
 	return orders, rows.Err()
 }
+
+func (s *Storage) UpdateOrder(ctx context.Context, orderNumber, status string, accrual int) error {
+	q := "UPDATE orders SET(status, accrual) = ($1, $2) WHERE order_number = $3"
+
+	_, err := s.pool.Exec(ctx, q, status, accrual, orderNumber)
+	if err != nil {
+		return fmt.Errorf("cannot update order: %w", err)
+	}
+
+	return nil
+}
