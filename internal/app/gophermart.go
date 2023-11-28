@@ -208,7 +208,7 @@ func (gm *GMart) GetOrders(ctx context.Context) ([]models.Order, error) {
 }
 
 func (gm *GMart) getOrderAccrual(orderNumber string, userID int) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	accrual, err := gm.client.GetOrderAccrual(ctx, orderNumber)
