@@ -12,4 +12,5 @@ var (
 	ErrInvalidOrderNumber       = errors.New("invalid order number")
 	ErrOrderUploaded            = errors.New("the order has already been uploaded")
 	ErrOrderUploadedAnotherUser = errors.New("the order has already been uploaded another user")
+	ErrInsufficientBalance      = errors.New("insufficient funds on the balance sheet")
 )
