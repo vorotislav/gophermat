@@ -16,6 +16,12 @@ paths:
     $ref: './user/login/login.yaml'
   /api/user/orders:
     $ref: './user/orders/orders.yaml'
+  /api/user/balance:
+    $ref: './user/balance/balance.yaml'
+  /api/user/balance/withdraw:
+    $ref: './user/balance/withdraw/withdraw.yaml'
+  /api/user/balance/withdrawals:
+    $ref: './user/balance/withdrawals/withdrawals.yaml'
 
 components:
   securitySchemes:

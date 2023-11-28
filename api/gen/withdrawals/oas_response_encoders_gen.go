@@ -11,9 +11,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func encodeRegisterUserResponse(response RegisterUserRes, w http.ResponseWriter, span trace.Span) error {
+func encodeGetWithdrawalsResponse(response GetWithdrawalsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *RegisterUserOK:
+	case *GetWithdrawalsOKApplicationJSON:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -26,19 +26,19 @@ func encodeRegisterUserResponse(response RegisterUserRes, w http.ResponseWriter,
 
 		return nil
 
-	case *RegisterUserBadRequest:
-		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
+	case *GetWithdrawalsNoContent:
+		w.WriteHeader(204)
+		span.SetStatus(codes.Ok, http.StatusText(204))
 
 		return nil
 
-	case *RegisterUserConflict:
-		w.WriteHeader(409)
-		span.SetStatus(codes.Error, http.StatusText(409))
+	case *GetWithdrawalsUnauthorized:
+		w.WriteHeader(401)
+		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
-	case *RegisterUserInternalServerError:
+	case *GetWithdrawalsInternalServerError:
 		w.WriteHeader(500)
 		span.SetStatus(codes.Error, http.StatusText(500))
 

@@ -1,7 +1,7 @@
 get:
   tags:
-    - withdraws
-  operationId: getWithdraws
+    - withdrawals
+  operationId: getWithdrawals
   security:
     - BearerAuth: [ ]
   responses:
@@ -20,3 +20,9 @@ get:
                 processed_at:
                   type: string
                   format: date-time
+    '204':
+      description: no withdrawals
+    '401':
+      description: User is not authentication
+    '500':
+      description: Internal server error
