@@ -183,7 +183,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 		return err
 	}
 
-	go gm.getOrderAccrual(orderNumber)
+	go gm.getOrderAccrual(orderNumber, tokenPayload.UserID)
 
 	return nil
 }
@@ -207,7 +207,7 @@ func (gm *GMart) GetOrders(ctx context.Context) ([]models.Order, error) {
 	return orders, nil
 }
 
-func (gm *GMart) getOrderAccrual(orderNumber string) {
+func (gm *GMart) getOrderAccrual(orderNumber string, userID int) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -226,6 +226,27 @@ func (gm *GMart) getOrderAccrual(orderNumber string) {
 	}
 
 	gm.log.Info("order successful updated", zap.String("order number", orderNumber))
+
+	if accrual.Accrual == 0 {
+		return
+	}
+
+	balance, err := gm.storage.GetBalance(ctx, userID)
+	if err != nil {
+		gm.log.Error("cannot get balance", zap.Error(err))
+
+		return
+	}
+
+	err = gm.storage.UpdateBalance(ctx, models.Balance{
+		Current:  balance.Current + accrual.Accrual,
+		Withdraw: balance.Withdraw,
+	}, userID)
+	if err != nil {
+		gm.log.Error("cannot update balance", zap.Error(err))
+
+		return
+	}
 }
 
 func (gm *GMart) GetBalance(ctx context.Context) (models.Balance, error) {

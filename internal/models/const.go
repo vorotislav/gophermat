@@ -5,7 +5,6 @@ import "errors"
 var (
 	ErrNotFound                 = errors.New("not found")
 	ErrInvalidInput             = errors.New("invalid input")
-	ErrForbidden                = errors.New("forbidden")
 	ErrConflict                 = errors.New("conflict")
 	ErrInternal                 = errors.New("internal error")
 	ErrInvalidPassword          = errors.New("invalid password")

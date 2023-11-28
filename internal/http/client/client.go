@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"go.uber.org/zap"
 	"gophermat/internal/models"
+	"io"
 	"net/http"
 	"time"
 )
@@ -44,24 +46,31 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 		return models.OrderAccrual{}, fmt.Errorf("cannot prepare request: %w", err)
 	}
 
-	resp, err := c.dc.Do(req)
-	if err != nil {
-		c.log.Error("cannot do request", zap.Error(err))
+	var body []byte
 
-		return models.OrderAccrual{}, fmt.Errorf("cannot get accrual: %w", err)
-	}
+	err = retry.Do(
+		func() error {
+			resp, err := c.dc.Do(req)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+			body, err = io.ReadAll(resp.Body)
+			if err != nil || resp.StatusCode >= http.StatusInternalServerError {
+				return err
+			}
 
-	defer resp.Body.Close()
+			return nil
+		},
+		retry.RetryIf(func(err error) bool {
+			return err != nil
+		}),
+		retry.Attempts(4),
+		retry.Context(ctx))
 
 	var accrual models.OrderAccrual
 
-	if resp.StatusCode != http.StatusOK {
-		c.log.Info("response status not ok", zap.String("status", resp.Status))
-
-		return models.OrderAccrual{}, fmt.Errorf("accrual request status %s", resp.Status)
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&accrual); err != nil {
+	if err := json.Unmarshal(body, &accrual); err != nil {
 		c.log.Error("cannot decode response", zap.Error(err))
 
 		return models.OrderAccrual{}, fmt.Errorf("cannot decode accrual: %w", err)

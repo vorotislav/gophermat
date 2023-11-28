@@ -20,6 +20,7 @@ require (
 )
 
 require (
+	github.com/avast/retry-go/v4 v4.5.1 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
