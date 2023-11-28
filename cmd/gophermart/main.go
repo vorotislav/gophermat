@@ -47,11 +47,9 @@ func main() {
 		cancel()
 	})
 
-	repo, err := postgres.NewStorage(ctx, logger, &set)
+	repo, err := postgres.NewStorage(ctx, logger, set.DatabaseURI)
 	if err != nil {
-		logger.Error("create storage", zap.Error(err))
-
-		return
+		logger.Fatal("create storage", zap.Error(err))
 	}
 
 	auth := authentication.NewAuthenticator()
@@ -62,9 +60,7 @@ func main() {
 
 	s, err := http.NewService(logger, &set, gm, auth)
 	if err != nil {
-		logger.Error("create http service", zap.Error(err))
-
-		return
+		logger.Fatal("create http service", zap.Error(err))
 	}
 
 	serviceErrCh := make(chan error, 1)

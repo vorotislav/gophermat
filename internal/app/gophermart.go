@@ -24,6 +24,10 @@ type storage interface {
 	SaveOrder(ctx context.Context, order models.Order) error
 	GetOrders(ctx context.Context, userID int) ([]models.Order, error)
 	UpdateOrder(ctx context.Context, orderNumber, status string, accrual int) error
+	GetBalance(ctx context.Context, userID int) (models.Balance, error)
+	UpdateBalance(ctx context.Context, balance models.Balance, userID int) error
+	AddBalanceHistory(ctx context.Context, orderNumber string, sum, userID int) error
+	GetBalanceHistory(ctx context.Context, userID int) ([]models.BalanceWithdrawal, error)
 }
 
 type authorizer interface {
@@ -184,6 +188,70 @@ func (gm *GMart) getOrderAccrual(orderNumber string) {
 	}
 
 	gm.log.Info("order successful updated", zap.String("order number", orderNumber))
+}
+
+func (gm *GMart) GetBalance(ctx context.Context) (models.Balance, error) {
+	// получаем id пользователя
+	tokenPayload, err := payloadFromContext(ctx)
+	if err != nil {
+		return models.Balance{}, err
+	}
+
+	balance, err := gm.storage.GetBalance(ctx, tokenPayload.UserID)
+	if err != nil {
+		return models.Balance{}, err
+	}
+
+	return balance, nil
+}
+
+func (gm *GMart) DeductPoints(ctx context.Context, withdraw models.BalanceWithdraw) error {
+	// получаем id пользователя
+	tokenPayload, err := payloadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	// получаем баланс пользователя
+	balance, err := gm.storage.GetBalance(ctx, tokenPayload.UserID)
+	if err != nil {
+		return err
+	}
+
+	// проверяем, что текущий баланс позволяет списать запрошенную сумму
+	if balance.Current < withdraw.Sum {
+		return models.ErrInsufficientBalance
+	}
+
+	// меняем баланс
+	err = gm.storage.UpdateBalance(ctx, models.Balance{
+		Current:  balance.Current - withdraw.Sum,
+		Withdraw: balance.Withdraw + withdraw.Sum,
+	}, tokenPayload.UserID)
+	if err != nil {
+		return err
+	}
+
+	// записываем изменение баланса в историю
+	err = gm.storage.AddBalanceHistory(ctx, withdraw.Order, withdraw.Sum, tokenPayload.UserID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (gm *GMart) GetWithdrawals(ctx context.Context) ([]models.BalanceWithdrawal, error) { // получаем id пользователя
+	tokenPayload, err := payloadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	history, err := gm.storage.GetBalanceHistory(ctx, tokenPayload.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return history, nil
 }
 
 func payloadFromContext(ctx context.Context) (models.TokenPayload, error) {
