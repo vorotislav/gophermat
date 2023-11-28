@@ -68,6 +68,10 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 		retry.Attempts(4),
 		retry.Context(ctx))
 
+	if err != nil {
+		return models.OrderAccrual{}, fmt.Errorf("cannot do request: %w", err)
+	}
+
 	var accrual models.OrderAccrual
 
 	if err := json.Unmarshal(body, &accrual); err != nil {
