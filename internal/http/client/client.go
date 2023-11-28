@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	httpClientTimeout = time.Millisecond * 500
+	httpClientTimeout = time.Millisecond * 500000
 )
 
 type Client struct {
