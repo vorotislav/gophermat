@@ -38,6 +38,8 @@ func main() {
 		zap.String("accrual system address", set.AccrualSystemAddress))
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	oss := signals.NewOSSignals(ctx)
 
 	oss.Subscribe(func(sig os.Signal) {
@@ -54,7 +56,7 @@ func main() {
 
 	auth := authentication.NewAuthenticator()
 
-	accrualClient := client.NewClient(logger, &set)
+	accrualClient := client.NewClient(logger, set.AccrualSystemAddress)
 
 	gm := app.NewGMart(logger, auth, repo, accrualClient)
 

@@ -56,16 +56,28 @@ func NewGMart(log *zap.Logger, auth authorizer, storage storage, ac accrualClien
 
 func (gm *GMart) RegisterUser(ctx context.Context, user models.User) (string, error) {
 	if err := user.Validate(); err != nil {
+		gm.log.Error("cannot input validate", zap.Error(err))
+
 		return "", fmt.Errorf("%w: %w", models.ErrInvalidInput, err)
 	}
 
 	_, err := gm.storage.GetUser(ctx, user)
 	if err == nil {
+		gm.log.Info("this user is already registered")
+
 		return "", models.ErrConflict
+	} else {
+		if !errors.Is(err, models.ErrNotFound) {
+			gm.log.Error("cannot user register", zap.Error(err))
+
+			return "", models.ErrInternal
+		}
 	}
 
 	passHash, err := crypt.HashPassword(user.Password)
 	if err != nil {
+		gm.log.Error("cannot hash password", zap.Error(err))
+
 		return "", fmt.Errorf("%w: %w", models.ErrInternal, err)
 	}
 
@@ -73,11 +85,15 @@ func (gm *GMart) RegisterUser(ctx context.Context, user models.User) (string, er
 
 	u, err := gm.storage.RegisterUser(ctx, user)
 	if err != nil {
+		gm.log.Error("cannot user register", zap.Error(err))
+
 		return "", fmt.Errorf("%w: %w", models.ErrInternal, err)
 	}
 
 	token, err := gm.auth.GenerateToken(models.TokenPayload{UserID: u.ID})
 	if err != nil {
+		gm.log.Error("cannot generate token", zap.Error(err))
+
 		return "", fmt.Errorf("%w: %w", models.ErrInternal, err)
 	}
 
@@ -86,11 +102,15 @@ func (gm *GMart) RegisterUser(ctx context.Context, user models.User) (string, er
 
 func (gm *GMart) LoginUser(ctx context.Context, user models.User) (string, error) {
 	if err := user.Validate(); err != nil {
+		gm.log.Error("cannot input validate", zap.Error(err))
+
 		return "", fmt.Errorf("%w: %w", models.ErrInvalidInput, err)
 	}
 
 	u, err := gm.storage.GetUser(ctx, user)
 	if err != nil {
+		gm.log.Error("cannot user login", zap.Error(err))
+
 		if errors.Is(err, models.ErrNotFound) {
 			return "", err
 		}
@@ -99,11 +119,15 @@ func (gm *GMart) LoginUser(ctx context.Context, user models.User) (string, error
 	}
 
 	if err := crypt.CheckPassword(user.Password, u.Password); err != nil {
+		gm.log.Error("cannot user register", zap.Error(err))
+
 		return "", models.ErrInvalidPassword
 	}
 
 	token, err := gm.auth.GenerateToken(models.TokenPayload{UserID: u.ID})
 	if err != nil {
+		gm.log.Error("cannot generate token", zap.Error(err))
+
 		return "", fmt.Errorf("%w: %w", models.ErrInternal, err)
 	}
 
@@ -114,23 +138,31 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	// проверяем корректность номера заказа
 	on, err := strconv.Atoi(orderNumber)
 	if err != nil {
+		gm.log.Error("cannot order number check", zap.Error(err))
+
 		return fmt.Errorf("%w: %w", models.ErrInvalidOrderNumber, err)
 	}
 
 	// проверяем номер заказа по алгоритму Луна
 	if ok := luhn.Valid(on); !ok {
+		gm.log.Error("order number is not correct on luhn")
+
 		return fmt.Errorf("%w: order number is not correct on luhn", models.ErrInvalidOrderNumber)
 	}
 
 	// получаем id пользователя
 	tokenPayload, err := payloadFromContext(ctx)
 	if err != nil {
+		gm.log.Error("cannot get payload", zap.Error(err))
+
 		return err
 	}
 
 	// проверяем номер заказа в репозитории
 	order, err := gm.storage.GetOrder(ctx, orderNumber)
 	if err == nil {
+		gm.log.Error("cannot get order", zap.Error(err))
+
 		if order.UserID == tokenPayload.UserID {
 			return models.ErrOrderUploaded
 		}
@@ -146,6 +178,8 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 
 	err = gm.storage.SaveOrder(ctx, o)
 	if err != nil {
+		gm.log.Error("cannot save order", zap.Error(err))
+
 		return err
 	}
 
@@ -158,11 +192,15 @@ func (gm *GMart) GetOrders(ctx context.Context) ([]models.Order, error) {
 	// получаем id пользователя
 	tokenPayload, err := payloadFromContext(ctx)
 	if err != nil {
+		gm.log.Error("cannot get payload", zap.Error(err))
+
 		return nil, err
 	}
 
 	orders, err := gm.storage.GetOrders(ctx, tokenPayload.UserID)
 	if err != nil {
+		gm.log.Error("cannot get orders", zap.Error(err))
+
 		return nil, err
 	}
 
@@ -194,11 +232,15 @@ func (gm *GMart) GetBalance(ctx context.Context) (models.Balance, error) {
 	// получаем id пользователя
 	tokenPayload, err := payloadFromContext(ctx)
 	if err != nil {
+		gm.log.Error("cannot get payload", zap.Error(err))
+
 		return models.Balance{}, err
 	}
 
 	balance, err := gm.storage.GetBalance(ctx, tokenPayload.UserID)
 	if err != nil {
+		gm.log.Error("cannot get balance", zap.Error(err))
+
 		return models.Balance{}, err
 	}
 
@@ -209,17 +251,23 @@ func (gm *GMart) DeductPoints(ctx context.Context, withdraw models.BalanceWithdr
 	// получаем id пользователя
 	tokenPayload, err := payloadFromContext(ctx)
 	if err != nil {
+		gm.log.Error("cannot get payload", zap.Error(err))
+
 		return err
 	}
 
 	// получаем баланс пользователя
 	balance, err := gm.storage.GetBalance(ctx, tokenPayload.UserID)
 	if err != nil {
+		gm.log.Error("cannot get balance", zap.Error(err))
+
 		return err
 	}
 
 	// проверяем, что текущий баланс позволяет списать запрошенную сумму
 	if balance.Current < withdraw.Sum {
+		gm.log.Error("the user's balance is less than the requested amount")
+
 		return models.ErrInsufficientBalance
 	}
 
@@ -229,12 +277,16 @@ func (gm *GMart) DeductPoints(ctx context.Context, withdraw models.BalanceWithdr
 		Withdraw: balance.Withdraw + withdraw.Sum,
 	}, tokenPayload.UserID)
 	if err != nil {
+		gm.log.Error("cannot update balance", zap.Error(err))
+
 		return err
 	}
 
 	// записываем изменение баланса в историю
 	err = gm.storage.AddBalanceHistory(ctx, withdraw.Order, withdraw.Sum, tokenPayload.UserID)
 	if err != nil {
+		gm.log.Error("cannot add balance history", zap.Error(err))
+
 		return err
 	}
 
@@ -243,11 +295,15 @@ func (gm *GMart) DeductPoints(ctx context.Context, withdraw models.BalanceWithdr
 func (gm *GMart) GetWithdrawals(ctx context.Context) ([]models.BalanceWithdrawal, error) { // получаем id пользователя
 	tokenPayload, err := payloadFromContext(ctx)
 	if err != nil {
+		gm.log.Error("cannot get payload", zap.Error(err))
+
 		return nil, err
 	}
 
 	history, err := gm.storage.GetBalanceHistory(ctx, tokenPayload.UserID)
 	if err != nil {
+		gm.log.Error("cannot get balance history", zap.Error(err))
+
 		return nil, err
 	}
 
