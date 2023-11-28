@@ -34,7 +34,7 @@ func NewHandler(log *zap.Logger, gmart gmart) *Handler {
 func (h *Handler) DeductPoints(ctx context.Context, req api.OptDeductPointsReq) (api.DeductPointsRes, error) {
 	err := h.gmart.DeductPoints(ctx, models.BalanceWithdraw{
 		Order: req.Value.GetOrder(),
-		Sum:   req.Value.GetSum(),
+		Sum:   int(req.Value.GetSum() * 100),
 	})
 
 	if err != nil {
@@ -78,7 +78,7 @@ func (h *Handler) GetWithdrawals(ctx context.Context) (api.GetWithdrawalsRes, er
 	for _, d := range drawals {
 		r := api.GetWithdrawalsOKItem{
 			Order:       api.NewOptString(d.Order),
-			Sum:         api.NewOptFloat64(d.Sum),
+			Sum:         api.NewOptFloat64(float64(d.Sum / 100)),
 			ProcessedAt: api.NewOptDateTime(d.ProcessedAt),
 		}
 
