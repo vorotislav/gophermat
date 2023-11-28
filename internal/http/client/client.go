@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	httpClientTimeout = time.Millisecond * 1500
+	httpClientTimeout = time.Millisecond * 500
 )
 
 type Client struct {
@@ -39,7 +39,7 @@ func NewClient(log *zap.Logger, accrualAddress string) *Client {
 func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (models.OrderAccrual, error) {
 	c.log.Debug("new request for order", zap.String("order number", orderNumber))
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.serverURL+"/"+orderNumber, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.serverURL+orderNumber, http.NoBody)
 	if err != nil {
 		c.log.Error("cannot prepare request", zap.Error(err))
 

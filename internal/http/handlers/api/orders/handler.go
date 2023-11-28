@@ -64,7 +64,7 @@ func (h *Handler) LoadOrder(ctx context.Context, req api.LoadOrderReq) (api.Load
 	err = h.gmart.LoadOrder(ctx, string(order))
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidOrderNumber) {
-			return &api.LoadOrderUnprocessableEntity{}, err
+			return &api.LoadOrderUnprocessableEntity{}, nil
 		}
 
 		if errors.Is(err, models.ErrOrderUploaded) {
