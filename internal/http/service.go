@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5/middleware"
+	api "gophermat/api/gen/balance"
+	"gophermat/internal/http/handlers/api/balance"
 	"gophermat/internal/http/handlers/api/orders"
 	"gophermat/internal/models"
 	"net/http"
@@ -32,6 +34,9 @@ type gmart interface {
 	RegisterUser(ctx context.Context, user models.User) (string, error)
 	LoadOrder(ctx context.Context, orderNumber string) error
 	GetOrders(ctx context.Context) ([]models.Order, error)
+	GetBalance(ctx context.Context) (models.Balance, error)
+	DeductPoints(ctx context.Context, withdraw models.BalanceWithdraw) error
+	GetWithdrawals(ctx context.Context) ([]models.BalanceWithdrawal, error)
 }
 
 type authorizer interface {
@@ -121,6 +126,18 @@ func createRoutes(log *zap.Logger, gmart gmart, auth authorizer) ([]Route, error
 	routes = append(routes, Route{
 		Pattern: APIPathPrefix + orders.APIOrdersPath,
 		Handler: or,
+	})
+
+	bh := balance.NewHandler(log, gmart)
+	sbh := balance.NewSecHandler(auth)
+	br, err := api.NewServer(bh, sbh)
+	if err != nil {
+		return nil, err
+	}
+
+	routes = append(routes, Route{
+		Pattern: APIPathPrefix + balance.APIBalancePath,
+		Handler: br,
 	})
 
 	return routes, nil
