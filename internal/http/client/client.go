@@ -46,6 +46,8 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 		return models.OrderAccrual{}, fmt.Errorf("cannot prepare request: %w", err)
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+
 	var body []byte
 
 	err = retry.Do(
