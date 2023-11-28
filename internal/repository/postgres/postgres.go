@@ -5,10 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-
-	"gophermat/internal/models"
-	"gophermat/internal/settings"
-
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
@@ -16,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	"gophermat/internal/models"
 )
 
 //go:embed migrations/*
@@ -33,9 +30,9 @@ type Storage struct {
 	pool *pgxpool.Pool
 }
 
-func NewStorage(ctx context.Context, log *zap.Logger, set *settings.Settings) (*Storage, error) {
-	log.Debug(fmt.Sprintf("Storage: database uri: %s", set.DatabaseURI))
-	pool, err := pgxpool.New(ctx, set.DatabaseURI)
+func NewStorage(ctx context.Context, log *zap.Logger, databaseURI string) (*Storage, error) {
+	log.Debug(fmt.Sprintf("Storage: database uri: %s", databaseURI))
+	pool, err := pgxpool.New(ctx, databaseURI)
 
 	if err != nil {
 		log.Error("create pool", zap.Error(err))
@@ -204,4 +201,69 @@ func (s *Storage) UpdateOrder(ctx context.Context, orderNumber, status string, a
 	}
 
 	return nil
+}
+
+func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, error) {
+	q := "SELECT current, withdraw FROM balance WHERE user_id = $1"
+
+	b := models.Balance{}
+
+	err := s.pool.QueryRow(ctx, q, userID).Scan(&b.Current, &b.Withdraw)
+	if err != nil {
+		return models.Balance{}, fmt.Errorf("cannot get balance: %w", err)
+	}
+
+	return b, nil
+}
+
+func (s *Storage) UpdateBalance(ctx context.Context, balance models.Balance, userID int) error {
+	q := "UPDATE balance SET(current, withdraw) = ($1, $2) WHERE user_id = $3"
+
+	_, err := s.pool.Exec(ctx, q, balance.Current, balance.Withdraw, userID)
+	if err != nil {
+		return fmt.Errorf("cannot update balance: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) AddBalanceHistory(ctx context.Context, orderNumber string, sum, userID int) error {
+	q := "INSERT INTO history (user_id, order_number, sum, processed_at) VALUES ($1, $2, $3, now())"
+
+	_, err := s.pool.Exec(ctx, q, userID, orderNumber, sum)
+	if err != nil {
+		return fmt.Errorf("cannot insert balance history: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) GetBalanceHistory(ctx context.Context, userID int) ([]models.BalanceWithdrawal, error) {
+	q := "SELECT order_number, sum, processed_at FROM history WHERE user_id = $1 ORDER BY processed_at"
+
+	rows, err := s.pool.Query(ctx, q, userID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get balance history: %w", err)
+	}
+
+	defer rows.Close()
+
+	history := make([]models.BalanceWithdrawal, 0)
+
+	for rows.Next() {
+		h := models.BalanceWithdrawal{}
+
+		err = rows.Scan(&h.Order, &h.Sum, &h.ProcessedAt)
+		if err != nil {
+			return nil, fmt.Errorf("cannot scan balance history: %w", err)
+		}
+
+		history = append(history, h)
+	}
+
+	if len(history) == 0 {
+		return nil, models.ErrNotFound
+	}
+
+	return history, rows.Err()
 }
