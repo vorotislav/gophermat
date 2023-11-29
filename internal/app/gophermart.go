@@ -376,7 +376,7 @@ func processOrder(log *zap.Logger, store storage, client accrualClient, order mo
 		return
 	}
 
-	err = store.UpdateOrder(ctx, order.Number, accrual.Status, accrual.Accrual)
+	err = store.UpdateOrder(ctx, order.Number, accrual.Status, int(accrual.Accrual*100))
 	if err != nil {
 		log.Error("cannot update order accrual", zap.Error(err))
 
@@ -397,7 +397,7 @@ func processOrder(log *zap.Logger, store storage, client accrualClient, order mo
 	}
 
 	err = store.UpdateBalance(ctx, models.Balance{
-		Current:  balance.Current + accrual.Accrual,
+		Current:  balance.Current + int(accrual.Accrual*100),
 		Withdraw: balance.Withdraw,
 	}, order.UserID)
 	if err != nil {
