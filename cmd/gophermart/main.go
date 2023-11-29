@@ -12,6 +12,7 @@ import (
 	"gophermat/internal/signals"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -66,13 +67,17 @@ func main() {
 	}
 
 	serviceErrCh := make(chan error, 1)
-	go func(errCh chan<- error) {
+
+	var wg sync.WaitGroup
+	go func(errCh chan<- error, wg *sync.WaitGroup) {
+		wg.Add(1)
+		defer wg.Done()
 		defer close(errCh)
 
 		if err := s.Run(); err != nil {
 			errCh <- err
 		}
-	}(serviceErrCh)
+	}(serviceErrCh, &wg)
 
 	select {
 	case err := <-serviceErrCh:
@@ -84,6 +89,8 @@ func main() {
 		logger.Info("Server stopping...")
 		ctxShutdown, ctxCancelShutdown := context.WithTimeout(context.Background(), serviceShutdownTimeout)
 
+		gm.Stop()
+
 		if err := s.Stop(ctxShutdown); err != nil {
 			logger.Error("cannot stop server", zap.Error(err))
 		}
@@ -92,4 +99,6 @@ func main() {
 
 		defer ctxCancelShutdown()
 	}
+
+	wg.Wait()
 }
