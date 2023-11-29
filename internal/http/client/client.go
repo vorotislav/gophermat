@@ -48,7 +48,10 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 
 	req.Header.Set("Content-Type", "application/json")
 
-	var body []byte
+	var (
+		body       []byte
+		statusCode int
+	)
 
 	err = retry.Do(
 		func() error {
@@ -58,6 +61,8 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 			}
 			defer resp.Body.Close()
 			body, err = io.ReadAll(resp.Body)
+			statusCode = resp.StatusCode
+
 			if err != nil || resp.StatusCode >= http.StatusInternalServerError {
 				return err
 			}
@@ -67,7 +72,7 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 		retry.RetryIf(func(err error) bool {
 			return err != nil
 		}),
-		retry.Attempts(4),
+		retry.Attempts(2),
 		retry.Context(ctx))
 
 	if err != nil {
@@ -76,11 +81,20 @@ func (c *Client) GetOrderAccrual(ctx context.Context, orderNumber string) (model
 
 	var accrual models.OrderAccrual
 
-	if err := json.Unmarshal(body, &accrual); err != nil {
-		c.log.Error("cannot decode response", zap.Error(err))
-
-		return models.OrderAccrual{}, fmt.Errorf("cannot decode accrual: %w", err)
+	if statusCode == http.StatusNoContent {
+		return models.OrderAccrual{}, models.ErrNotFound
 	}
 
-	return accrual, nil
+	if statusCode == http.StatusOK {
+		if err := json.Unmarshal(body, &accrual); err != nil {
+			c.log.Error("cannot decode response", zap.Error(err))
+
+			return models.OrderAccrual{}, fmt.Errorf("cannot decode accrual: %w", err)
+		}
+
+		return accrual, nil
+	}
+
+	return models.OrderAccrual{},
+		fmt.Errorf("cannot get accrual, status code: %d", statusCode)
 }
