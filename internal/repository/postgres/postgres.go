@@ -13,10 +13,15 @@ import (
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"gophermat/internal/models"
+	"time"
 )
 
 //go:embed migrations/*
 var migrations embed.FS
+
+const (
+	storeDuration = time.Millisecond * 500
+)
 
 var (
 	ErrSourceDriver   = errors.New("cannot create source driver")
@@ -190,6 +195,47 @@ func (s *Storage) GetOrders(ctx context.Context, userID int) ([]models.Order, er
 	}
 
 	return orders, rows.Err()
+}
+
+func (s *Storage) GetNotProcessOrders() ([]models.Order, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), storeDuration)
+	defer cancel()
+
+	q := "SELECT id, user_id, order_number, status FROM orders WHERE status not in ('INVALID', 'PROCESSED')"
+
+	rows, err := s.pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get not processed orders")
+	}
+
+	defer rows.Close()
+
+	orders := make([]models.Order, 0)
+
+	for rows.Next() {
+		order := models.Order{}
+
+		err = rows.Scan(
+			&order.ID,
+			&order.UserID,
+			&order.Number,
+			&order.Status)
+		if err != nil {
+			return nil, fmt.Errorf("cannot scan orders: %w", err)
+		}
+
+		orders = append(orders, order)
+	}
+
+	if len(orders) == 0 {
+		return nil, models.ErrNotFound
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("query err: %w", err)
+	}
+
+	return orders, nil
 }
 
 func (s *Storage) UpdateOrder(ctx context.Context, orderNumber, status string, accrual int) error {
