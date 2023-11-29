@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/alitto/pond"
 	"github.com/go-faster/errors"
 	"go.uber.org/zap"
 	"gophermat/internal/crypt"
@@ -17,6 +18,12 @@ var (
 	ErrTokenPayload = errors.New("cannot get token payload from context")
 )
 
+const (
+	tickerDuration = time.Second * 2
+	maxWorkers     = 10
+	maxCapacity    = 50
+)
+
 type storage interface {
 	RegisterUser(ctx context.Context, user models.User) (models.User, error)
 	GetUser(ctx context.Context, user models.User) (models.User, error)
@@ -28,6 +35,7 @@ type storage interface {
 	UpdateBalance(ctx context.Context, balance models.Balance, userID int) error
 	AddBalanceHistory(ctx context.Context, orderNumber string, sum, userID int) error
 	GetBalanceHistory(ctx context.Context, userID int) ([]models.BalanceWithdrawal, error)
+	GetNotProcessOrders() ([]models.Order, error)
 }
 
 type authorizer interface {
@@ -43,15 +51,28 @@ type GMart struct {
 	auth    authorizer
 	storage storage
 	client  accrualClient
+	doneCh  chan struct{}
+	pool    *pond.WorkerPool
 }
 
 func NewGMart(log *zap.Logger, auth authorizer, storage storage, ac accrualClient) *GMart {
-	return &GMart{
+	gm := &GMart{
 		log:     log,
 		auth:    auth,
 		storage: storage,
 		client:  ac,
+		doneCh:  make(chan struct{}),
+		pool:    pond.New(maxWorkers, maxCapacity),
 	}
+
+	go processingAccrualOrders(log, storage, ac, gm.doneCh, gm.pool)
+
+	return gm
+}
+
+func (gm *GMart) Stop() {
+	close(gm.doneCh)
+	gm.pool.Stop()
 }
 
 func (gm *GMart) RegisterUser(ctx context.Context, user models.User) (string, error) {
@@ -183,8 +204,6 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 		return err
 	}
 
-	go gm.getOrderAccrual(orderNumber, tokenPayload.UserID)
-
 	return nil
 }
 
@@ -205,48 +224,6 @@ func (gm *GMart) GetOrders(ctx context.Context) ([]models.Order, error) {
 	}
 
 	return orders, nil
-}
-
-func (gm *GMart) getOrderAccrual(orderNumber string, userID int) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second+60)
-	defer cancel()
-
-	accrual, err := gm.client.GetOrderAccrual(ctx, orderNumber)
-	if err != nil {
-		gm.log.Error("cannot get order accrual", zap.Error(err))
-
-		return
-	}
-
-	err = gm.storage.UpdateOrder(ctx, orderNumber, accrual.Status, accrual.Accrual)
-	if err != nil {
-		gm.log.Error("cannot update order accrual", zap.Error(err))
-
-		return
-	}
-
-	gm.log.Info("order successful updated", zap.String("order number", orderNumber))
-
-	if accrual.Accrual == 0 {
-		return
-	}
-
-	balance, err := gm.storage.GetBalance(ctx, userID)
-	if err != nil {
-		gm.log.Error("cannot get balance", zap.Error(err))
-
-		return
-	}
-
-	err = gm.storage.UpdateBalance(ctx, models.Balance{
-		Current:  balance.Current + accrual.Accrual,
-		Withdraw: balance.Withdraw,
-	}, userID)
-	if err != nil {
-		gm.log.Error("cannot update balance", zap.Error(err))
-
-		return
-	}
 }
 
 func (gm *GMart) GetBalance(ctx context.Context) (models.Balance, error) {
@@ -313,6 +290,7 @@ func (gm *GMart) DeductPoints(ctx context.Context, withdraw models.BalanceWithdr
 
 	return nil
 }
+
 func (gm *GMart) GetWithdrawals(ctx context.Context) ([]models.BalanceWithdrawal, error) { // получаем id пользователя
 	tokenPayload, err := payloadFromContext(ctx)
 	if err != nil {
@@ -343,4 +321,88 @@ func payloadFromContext(ctx context.Context) (models.TokenPayload, error) {
 	}
 
 	return tokenPayload, nil
+}
+
+func processingAccrualOrders(
+	log *zap.Logger,
+	store storage,
+	client accrualClient,
+	doneCh chan struct{},
+	pool *pond.WorkerPool) {
+	tick := time.NewTicker(tickerDuration)
+
+	for {
+		select {
+		case <-doneCh:
+			return
+		case <-tick.C:
+			{
+				orders, err := store.GetNotProcessOrders()
+				if err != nil {
+					if errors.Is(err, models.ErrNotFound) {
+						continue
+					}
+					log.Warn("cannot get not process orders", zap.Error(err))
+					continue
+				}
+
+				for _, o := range orders {
+					o := o
+					pool.Submit(func() {
+						processOrder(log, store, client, o)
+					})
+				}
+
+			}
+
+		}
+	}
+}
+
+func processOrder(log *zap.Logger, store storage, client accrualClient, order models.Order) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second+5)
+	defer cancel()
+
+	accrual, err := client.GetOrderAccrual(ctx, order.Number)
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			log.Debug("order not found in accrual", zap.String("order number", order.Number))
+
+			return
+		}
+
+		log.Error("cannot get order accrual", zap.Error(err))
+
+		return
+	}
+
+	err = store.UpdateOrder(ctx, order.Number, accrual.Status, accrual.Accrual)
+	if err != nil {
+		log.Error("cannot update order accrual", zap.Error(err))
+
+		return
+	}
+
+	log.Info("order successful updated", zap.String("order number", order.Number))
+
+	if accrual.Accrual == 0 {
+		return
+	}
+
+	balance, err := store.GetBalance(ctx, order.UserID)
+	if err != nil {
+		log.Error("cannot get balance", zap.Error(err))
+
+		return
+	}
+
+	err = store.UpdateBalance(ctx, models.Balance{
+		Current:  balance.Current + accrual.Accrual,
+		Withdraw: balance.Withdraw,
+	}, order.UserID)
+	if err != nil {
+		log.Error("cannot update balance", zap.Error(err))
+
+		return
+	}
 }
