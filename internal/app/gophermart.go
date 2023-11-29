@@ -71,6 +71,7 @@ func NewGMart(log *zap.Logger, auth authorizer, storage storage, ac accrualClien
 }
 
 func (gm *GMart) Stop() {
+	gm.log.Info("GMart stop. close channel and pool")
 	close(gm.doneCh)
 	gm.pool.Stop()
 }
