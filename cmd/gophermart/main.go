@@ -69,8 +69,8 @@ func main() {
 	serviceErrCh := make(chan error, 1)
 
 	var wg sync.WaitGroup
+	wg.Add(1)
 	go func(errCh chan<- error, wg *sync.WaitGroup) {
-		wg.Add(1)
 		defer wg.Done()
 		defer close(errCh)
 
