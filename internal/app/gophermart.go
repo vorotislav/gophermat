@@ -391,9 +391,7 @@ func processOrder(log *zap.Logger, store storage, client accrualClient, order mo
 
 	balance, err := store.GetBalance(ctx, order.UserID)
 	if err != nil {
-		log.Error("cannot get balance", zap.Error(err))
-
-		return
+		log.Debug("cannot get balance", zap.Error(err))
 	}
 
 	err = store.UpdateBalance(ctx, models.Balance{
