@@ -1,0 +1,23 @@
+get:
+  tags:
+    - balance
+  operationId: getBalance
+  security:
+    - BearerAuth: [ ]
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              current:
+                type: number
+                title: Current
+              withdrawn:
+                type: integer
+                title: Withdrawn
+    '401':
+      description: User is not authentication
+    '500':
+      description: Internal server error

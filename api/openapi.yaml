@@ -1,0 +1,32 @@
+openapi: 3.0.3
+
+info:
+  title: Gophermart
+  description: Накопительная система лояльности «Гофермарт»
+  version: 1.0.0
+
+tags:
+  - name: api
+    description: Service API
+
+paths:
+  /api/user/register:
+    $ref: './user/register/register.yaml'
+  /api/user/login:
+    $ref: './user/login/login.yaml'
+  /api/user/orders:
+    $ref: './user/orders/orders.yaml'
+  /api/user/balance:
+    $ref: './user/balance/balance.yaml'
+  /api/user/balance/withdraw:
+    $ref: './user/balance/withdraw/withdraw.yaml'
+  /api/user/balance/withdrawals:
+    $ref: './user/balance/withdrawals/withdrawals.yaml'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: "JWT"
+      description: "JWT authorization header using the Bearer schema"

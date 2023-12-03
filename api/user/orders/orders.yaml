@@ -1,0 +1,58 @@
+post:
+  tags:
+    - orders
+  operationId: loadOrder
+  security:
+    - BearerAuth: [ ]
+  requestBody:
+    content:
+      text/plain:
+        schema:
+          type: string
+  responses:
+    '200':
+      description: The order has already been uploaded
+    '202':
+      description: Order is processed
+    '400':
+      description: Invalid input
+    '401':
+      description: User is not authentication
+    '409':
+      description: The order has already been uploaded another user
+    '422':
+      description: Invalid order format
+    '500':
+      description: Internal server error
+
+get:
+  tags:
+    - orders
+  operationId: getOrders
+  security:
+    - BearerAuth: [ ]
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                number:
+                  type: string
+                status:
+                  type: string
+                accrual:
+                  type: integer
+                uploaded_at:
+                  type: string
+                  format: date-time
+                  example: '2023-01-01T00:00:00Z'
+    '204':
+      description: No data
+    '401':
+      description: User is not authentication
+    '500':
+      description: Internal server error

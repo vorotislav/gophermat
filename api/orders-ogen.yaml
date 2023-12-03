@@ -1,0 +1,6 @@
+parser:
+  allow_remote: true
+
+generator:
+  filters:
+    path_regex: /user/orders

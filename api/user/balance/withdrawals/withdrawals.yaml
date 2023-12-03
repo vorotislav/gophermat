@@ -1,0 +1,28 @@
+get:
+  tags:
+    - withdrawals
+  operationId: getWithdrawals
+  security:
+    - BearerAuth: [ ]
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                order:
+                  type: string
+                sum:
+                  type: number
+                processed_at:
+                  type: string
+                  format: date-time
+    '204':
+      description: no withdrawals
+    '401':
+      description: User is not authentication
+    '500':
+      description: Internal server error
