@@ -45,7 +45,7 @@ func (h *Handler) GetOrders(ctx context.Context) (api.GetOrdersRes, error) {
 		ro := api.GetOrdersOKItem{
 			Number:     api.NewOptString(o.Number),
 			Status:     api.NewOptString(o.Status),
-			Accrual:    api.NewOptFloat64(float64(o.Accrual / 100)),
+			Accrual:    api.NewOptFloat64(float64(o.Accrual) / 100),
 			UploadedAt: api.NewOptDateTime(o.UploadedAt),
 		}
 

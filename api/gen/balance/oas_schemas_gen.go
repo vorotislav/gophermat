@@ -75,8 +75,30 @@ type GetBalanceInternalServerError struct{}
 
 func (*GetBalanceInternalServerError) getBalanceRes() {}
 
-// GetBalanceNoContent is response for GetBalance operation.
-type GetBalanceNoContent struct{}
+type GetBalanceNoContent struct {
+	Current   OptFloat64 `json:"current"`
+	Withdrawn OptInt     `json:"withdrawn"`
+}
+
+// GetCurrent returns the value of Current.
+func (s *GetBalanceNoContent) GetCurrent() OptFloat64 {
+	return s.Current
+}
+
+// GetWithdrawn returns the value of Withdrawn.
+func (s *GetBalanceNoContent) GetWithdrawn() OptInt {
+	return s.Withdrawn
+}
+
+// SetCurrent sets the value of Current.
+func (s *GetBalanceNoContent) SetCurrent(val OptFloat64) {
+	s.Current = val
+}
+
+// SetWithdrawn sets the value of Withdrawn.
+func (s *GetBalanceNoContent) SetWithdrawn(val OptInt) {
+	s.Withdrawn = val
+}
 
 func (*GetBalanceNoContent) getBalanceRes() {}
 
