@@ -63,7 +63,7 @@ func (h *Handler) GetBalance(ctx context.Context) (api.GetBalanceRes, error) {
 	}
 
 	return &api.GetBalanceOK{
-		Current:   api.NewOptFloat64(float64(balance.Current / 100)),
+		Current:   api.NewOptFloat64(float64(balance.Current) / 100),
 		Withdrawn: api.NewOptInt(balance.Withdraw),
 	}, nil
 }
@@ -82,7 +82,7 @@ func (h *Handler) GetWithdrawals(ctx context.Context) (api.GetWithdrawalsRes, er
 	for _, d := range drawals {
 		r := api.GetWithdrawalsOKItem{
 			Order:       api.NewOptString(d.Order),
-			Sum:         api.NewOptFloat64(float64(d.Sum / 100)),
+			Sum:         api.NewOptFloat64(float64(d.Sum) / 100),
 			ProcessedAt: api.NewOptDateTime(d.ProcessedAt),
 		}
 
