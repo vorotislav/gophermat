@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 	"gophermat/internal/crypt"
 	"gophermat/internal/luhn"
-	"strconv"
 	"time"
 
 	"gophermat/internal/models"
@@ -158,16 +157,17 @@ func (gm *GMart) LoginUser(ctx context.Context, user models.User) (string, error
 
 func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	// проверяем корректность номера заказа
-	on, err := strconv.Atoi(orderNumber)
-	if err != nil {
-		gm.log.Error("cannot order number check", zap.Error(err))
-
-		return fmt.Errorf("%w: %w", models.ErrInvalidOrderNumber, err)
-	}
+	//on, err := strconv.Atoi(orderNumber)
+	//if err != nil {
+	//	gm.log.Error("cannot order number check", zap.Error(err))
+	//
+	//	return fmt.Errorf("%w: %w", models.ErrInvalidOrderNumber, err)
+	//}
 
 	// проверяем номер заказа по алгоритму Луна
-	if ok := luhn.Valid(on); !ok {
-		gm.log.Error("order number is not correct on luhn")
+	_, err := luhn.LuhnCheckDigit(orderNumber)
+	if err != nil {
+		gm.log.Error("order number is not correct on luhn", zap.String("order number", orderNumber))
 
 		return fmt.Errorf("%w: order number is not correct on luhn", models.ErrInvalidOrderNumber)
 	}

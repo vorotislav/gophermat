@@ -40,6 +40,8 @@ func (h *Handler) GetOrders(ctx context.Context) (api.GetOrdersRes, error) {
 		return &api.GetOrdersInternalServerError{}, err
 	}
 
+	h.log.Debug("get orders", zap.Any("orders", orders))
+
 	result := make(api.GetOrdersOKApplicationJSON, 0, len(orders))
 	for _, o := range orders {
 		ro := api.GetOrdersOKItem{
