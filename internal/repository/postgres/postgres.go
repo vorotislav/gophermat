@@ -162,7 +162,7 @@ func (s *Storage) SaveOrder(ctx context.Context, order models.Order) error {
 }
 
 func (s *Storage) GetOrders(ctx context.Context, userID int) ([]models.Order, error) {
-	q := "SELECT id, user_id, order_number, status, accrual, uploaded_at FROM orders WHERE user_id=$1 ORDER BY uploaded_at"
+	q := "SELECT id, user_id, order_number, status, accrual, uploaded_at FROM orders WHERE user_id=$1 and status is not null ORDER BY uploaded_at"
 
 	rows, err := s.pool.Query(ctx, q, userID)
 	if err != nil {

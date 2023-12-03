@@ -183,7 +183,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	// проверяем номер заказа в репозитории
 	order, err := gm.storage.GetOrder(ctx, orderNumber)
 	if err == nil {
-		gm.log.Error("cannot get order", zap.Error(err))
+		gm.log.Info("the order already exists", zap.String("number", orderNumber))
 
 		if order.UserID == tokenPayload.UserID {
 			return models.ErrOrderUploaded
