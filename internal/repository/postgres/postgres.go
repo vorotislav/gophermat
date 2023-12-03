@@ -250,7 +250,7 @@ func (s *Storage) UpdateOrder(ctx context.Context, orderNumber, status string, a
 }
 
 func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, error) {
-	q := "SELECT id, current, withdraw FROM balance WHERE user_id = $1"
+	q := "SELECT current, withdraw FROM balance WHERE user_id = $1"
 
 	b := models.Balance{}
 
