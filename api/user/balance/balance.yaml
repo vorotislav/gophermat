@@ -15,7 +15,7 @@ get:
                 type: number
                 title: Current
               withdrawn:
-                type: integer
+                type: number
                 title: Withdrawn
     '204':
       description: Balance not found
@@ -28,7 +28,7 @@ get:
                 type: number
                 title: Current
               withdrawn:
-                type: integer
+                type: number
                 title: Withdrawn
     '401':
       description: User is not authentication

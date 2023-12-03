@@ -2,10 +2,6 @@
 
 package api
 
-import (
-	"time"
-)
-
 type BearerAuth struct {
 	Token string
 }
@@ -77,7 +73,7 @@ func (*GetBalanceInternalServerError) getBalanceRes() {}
 
 type GetBalanceNoContent struct {
 	Current   OptFloat64 `json:"current"`
-	Withdrawn OptInt     `json:"withdrawn"`
+	Withdrawn OptFloat64 `json:"withdrawn"`
 }
 
 // GetCurrent returns the value of Current.
@@ -86,7 +82,7 @@ func (s *GetBalanceNoContent) GetCurrent() OptFloat64 {
 }
 
 // GetWithdrawn returns the value of Withdrawn.
-func (s *GetBalanceNoContent) GetWithdrawn() OptInt {
+func (s *GetBalanceNoContent) GetWithdrawn() OptFloat64 {
 	return s.Withdrawn
 }
 
@@ -96,7 +92,7 @@ func (s *GetBalanceNoContent) SetCurrent(val OptFloat64) {
 }
 
 // SetWithdrawn sets the value of Withdrawn.
-func (s *GetBalanceNoContent) SetWithdrawn(val OptInt) {
+func (s *GetBalanceNoContent) SetWithdrawn(val OptFloat64) {
 	s.Withdrawn = val
 }
 
@@ -104,7 +100,7 @@ func (*GetBalanceNoContent) getBalanceRes() {}
 
 type GetBalanceOK struct {
 	Current   OptFloat64 `json:"current"`
-	Withdrawn OptInt     `json:"withdrawn"`
+	Withdrawn OptFloat64 `json:"withdrawn"`
 }
 
 // GetCurrent returns the value of Current.
@@ -113,7 +109,7 @@ func (s *GetBalanceOK) GetCurrent() OptFloat64 {
 }
 
 // GetWithdrawn returns the value of Withdrawn.
-func (s *GetBalanceOK) GetWithdrawn() OptInt {
+func (s *GetBalanceOK) GetWithdrawn() OptFloat64 {
 	return s.Withdrawn
 }
 
@@ -123,7 +119,7 @@ func (s *GetBalanceOK) SetCurrent(val OptFloat64) {
 }
 
 // SetWithdrawn sets the value of Withdrawn.
-func (s *GetBalanceOK) SetWithdrawn(val OptInt) {
+func (s *GetBalanceOK) SetWithdrawn(val OptFloat64) {
 	s.Withdrawn = val
 }
 
@@ -133,107 +129,6 @@ func (*GetBalanceOK) getBalanceRes() {}
 type GetBalanceUnauthorized struct{}
 
 func (*GetBalanceUnauthorized) getBalanceRes() {}
-
-// GetWithdrawalsInternalServerError is response for GetWithdrawals operation.
-type GetWithdrawalsInternalServerError struct{}
-
-func (*GetWithdrawalsInternalServerError) getWithdrawalsRes() {}
-
-// GetWithdrawalsNoContent is response for GetWithdrawals operation.
-type GetWithdrawalsNoContent struct{}
-
-func (*GetWithdrawalsNoContent) getWithdrawalsRes() {}
-
-type GetWithdrawalsOKApplicationJSON []GetWithdrawalsOKItem
-
-func (*GetWithdrawalsOKApplicationJSON) getWithdrawalsRes() {}
-
-type GetWithdrawalsOKItem struct {
-	Order       OptString   `json:"order"`
-	Sum         OptFloat64  `json:"sum"`
-	ProcessedAt OptDateTime `json:"processed_at"`
-}
-
-// GetOrder returns the value of Order.
-func (s *GetWithdrawalsOKItem) GetOrder() OptString {
-	return s.Order
-}
-
-// GetSum returns the value of Sum.
-func (s *GetWithdrawalsOKItem) GetSum() OptFloat64 {
-	return s.Sum
-}
-
-// GetProcessedAt returns the value of ProcessedAt.
-func (s *GetWithdrawalsOKItem) GetProcessedAt() OptDateTime {
-	return s.ProcessedAt
-}
-
-// SetOrder sets the value of Order.
-func (s *GetWithdrawalsOKItem) SetOrder(val OptString) {
-	s.Order = val
-}
-
-// SetSum sets the value of Sum.
-func (s *GetWithdrawalsOKItem) SetSum(val OptFloat64) {
-	s.Sum = val
-}
-
-// SetProcessedAt sets the value of ProcessedAt.
-func (s *GetWithdrawalsOKItem) SetProcessedAt(val OptDateTime) {
-	s.ProcessedAt = val
-}
-
-// GetWithdrawalsUnauthorized is response for GetWithdrawals operation.
-type GetWithdrawalsUnauthorized struct{}
-
-func (*GetWithdrawalsUnauthorized) getWithdrawalsRes() {}
-
-// NewOptDateTime returns new OptDateTime with value set to v.
-func NewOptDateTime(v time.Time) OptDateTime {
-	return OptDateTime{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptDateTime is optional time.Time.
-type OptDateTime struct {
-	Value time.Time
-	Set   bool
-}
-
-// IsSet returns true if OptDateTime was set.
-func (o OptDateTime) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptDateTime) Reset() {
-	var v time.Time
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptDateTime) SetTo(v time.Time) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptDateTime) Get() (v time.Time, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptDateTime) Or(d time.Time) time.Time {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
 
 // NewOptDeductPointsReq returns new OptDeductPointsReq with value set to v.
 func NewOptDeductPointsReq(v DeductPointsReq) OptDeductPointsReq {
@@ -321,98 +216,6 @@ func (o OptFloat64) Get() (v float64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptFloat64) Or(d float64) float64 {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptInt returns new OptInt with value set to v.
-func NewOptInt(v int) OptInt {
-	return OptInt{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptInt is optional int.
-type OptInt struct {
-	Value int
-	Set   bool
-}
-
-// IsSet returns true if OptInt was set.
-func (o OptInt) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptInt) Reset() {
-	var v int
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptInt) SetTo(v int) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptInt) Get() (v int, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptInt) Or(d int) int {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptString returns new OptString with value set to v.
-func NewOptString(v string) OptString {
-	return OptString{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptString is optional string.
-type OptString struct {
-	Value string
-	Set   bool
-}
-
-// IsSet returns true if OptString was set.
-func (o OptString) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptString) Reset() {
-	var v string
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptString) SetTo(v string) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptString) Get() (v string, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptString) Or(d string) string {
 	if v, ok := o.Get(); ok {
 		return v
 	}

@@ -8,7 +8,3 @@ type DeductPointsRes interface {
 type GetBalanceRes interface {
 	getBalanceRes()
 }
-
-type GetWithdrawalsRes interface {
-	getWithdrawalsRes()
-}

@@ -56,6 +56,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if len(elem) == 0 {
+				// Leaf node.
 				switch r.Method {
 				case "POST":
 					s.handleDeductPointsRequest([0]string{}, elemIsEscaped, w, r)
@@ -64,26 +65,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				return
-			}
-			switch elem[0] {
-			case 'a': // Prefix: "als"
-				if l := len("als"); len(elem) >= l && elem[0:l] == "als" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					// Leaf node.
-					switch r.Method {
-					case "GET":
-						s.handleGetWithdrawalsRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, "GET")
-					}
-
-					return
-				}
 			}
 		}
 	}
@@ -175,6 +156,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			if len(elem) == 0 {
 				switch method {
 				case "POST":
+					// Leaf: DeductPoints
 					r.name = "DeductPoints"
 					r.summary = ""
 					r.operationID = "deductPoints"
@@ -184,30 +166,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					return r, true
 				default:
 					return
-				}
-			}
-			switch elem[0] {
-			case 'a': // Prefix: "als"
-				if l := len("als"); len(elem) >= l && elem[0:l] == "als" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					switch method {
-					case "GET":
-						// Leaf: GetWithdrawals
-						r.name = "GetWithdrawals"
-						r.summary = ""
-						r.operationID = "getWithdrawals"
-						r.pathPattern = "/api/user/balance/withdrawals"
-						r.args = args
-						r.count = 0
-						return r, true
-					default:
-						return
-					}
 				}
 			}
 		}

@@ -22,12 +22,12 @@ import (
 
 // handleGetWithdrawalsRequest handles getWithdrawals operation.
 //
-// GET /api/user/balance/withdrawals
+// GET /api/user/withdrawals
 func (s *Server) handleGetWithdrawalsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getWithdrawals"),
 		semconv.HTTPMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/api/user/balance/withdrawals"),
+		semconv.HTTPRouteKey.String("/api/user/withdrawals"),
 	}
 
 	// Start a span for this request.

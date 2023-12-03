@@ -20,8 +20,8 @@ paths:
     $ref: './user/balance/balance.yaml'
   /api/user/balance/withdraw:
     $ref: './user/balance/withdraw/withdraw.yaml'
-  /api/user/balance/withdrawals:
-    $ref: './user/balance/withdrawals/withdrawals.yaml'
+  /api/user/withdrawals:
+    $ref: './user/withdrawals/withdrawals.yaml'
 
 components:
   securitySchemes:

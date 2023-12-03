@@ -15,7 +15,7 @@ var _ Handler = UnimplementedHandler{}
 
 // GetWithdrawals implements getWithdrawals operation.
 //
-// GET /api/user/balance/withdrawals
+// GET /api/user/withdrawals
 func (UnimplementedHandler) GetWithdrawals(ctx context.Context) (r GetWithdrawalsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

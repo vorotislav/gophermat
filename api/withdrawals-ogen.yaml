@@ -3,4 +3,4 @@ parser:
 
 generator:
   filters:
-    path_regex: /user/balance/withdrawals
+    path_regex: /user/withdrawals
