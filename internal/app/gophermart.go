@@ -384,11 +384,10 @@ func processOrder(log *zap.Logger, store storage, client accrualClient, order mo
 		return
 	}
 
-	log.Info("order successful updated", zap.String("order number", order.Number))
-
-	if accrual.Accrual == 0 {
-		return
-	}
+	log.Info("order successful updated",
+		zap.String("order number", order.Number),
+		zap.String("status", accrual.Status),
+		zap.Float32("accrual", accrual.Accrual))
 
 	balance, err := store.GetBalance(ctx, order.UserID)
 	if err != nil {
