@@ -270,7 +270,7 @@ func (s *Storage) UpdateBalance(ctx context.Context, balance models.Balance, use
 	q := `INSERT INTO balance (user_id, current, withdraw) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE 
 			SET (current, withdraw) = ($2, $3)`
 
-	_, err := s.pool.Exec(ctx, q, balance.Current, balance.Withdraw, userID)
+	_, err := s.pool.Exec(ctx, q, userID, balance.Current, balance.Withdraw)
 	if err != nil {
 		return fmt.Errorf("cannot update balance: %w", err)
 	}
