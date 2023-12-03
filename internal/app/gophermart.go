@@ -195,6 +195,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	o := models.Order{
 		UserID:     tokenPayload.UserID,
 		Number:     orderNumber,
+		Status:     "NEW",
 		UploadedAt: time.Now(),
 	}
 
