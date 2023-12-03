@@ -250,7 +250,7 @@ func (s *Storage) UpdateOrder(ctx context.Context, orderNumber, status string, a
 }
 
 func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, error) {
-	q := "SELECT current, withdraw FROM balance WHERE user_id = $1"
+	q := "SELECT id, current, withdraw FROM balance WHERE user_id = $1"
 
 	b := models.Balance{}
 
@@ -267,7 +267,8 @@ func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, e
 }
 
 func (s *Storage) UpdateBalance(ctx context.Context, balance models.Balance, userID int) error {
-	q := "UPDATE balance SET(current, withdraw) = ($1, $2) WHERE user_id = $3"
+	q := `INSERT INTO balance (user_id, current, withdraw) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE 
+			SET (current, withdraw) = ($2, $3)`
 
 	_, err := s.pool.Exec(ctx, q, balance.Current, balance.Withdraw, userID)
 	if err != nil {
