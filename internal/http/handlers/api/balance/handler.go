@@ -55,6 +55,10 @@ func (h *Handler) DeductPoints(ctx context.Context, req api.OptDeductPointsReq) 
 func (h *Handler) GetBalance(ctx context.Context) (api.GetBalanceRes, error) {
 	balance, err := h.gmart.GetBalance(ctx)
 	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			return &api.GetBalanceNoContent{}, nil
+		}
+
 		return &api.GetBalanceInternalServerError{}, err
 	}
 

@@ -45,7 +45,7 @@ get:
                 status:
                   type: string
                 accrual:
-                  type: integer
+                  type: number
                 uploaded_at:
                   type: string
                   format: date-time

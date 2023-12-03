@@ -63,6 +63,12 @@ func encodeGetBalanceResponse(response GetBalanceRes, w http.ResponseWriter, spa
 
 		return nil
 
+	case *GetBalanceNoContent:
+		w.WriteHeader(204)
+		span.SetStatus(codes.Ok, http.StatusText(204))
+
+		return nil
+
 	case *GetBalanceUnauthorized:
 		w.WriteHeader(401)
 		span.SetStatus(codes.Error, http.StatusText(401))

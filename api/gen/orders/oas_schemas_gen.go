@@ -38,7 +38,7 @@ func (*GetOrdersOKApplicationJSON) getOrdersRes() {}
 type GetOrdersOKItem struct {
 	Number     OptString   `json:"number"`
 	Status     OptString   `json:"status"`
-	Accrual    OptInt      `json:"accrual"`
+	Accrual    OptFloat64  `json:"accrual"`
 	UploadedAt OptDateTime `json:"uploaded_at"`
 }
 
@@ -53,7 +53,7 @@ func (s *GetOrdersOKItem) GetStatus() OptString {
 }
 
 // GetAccrual returns the value of Accrual.
-func (s *GetOrdersOKItem) GetAccrual() OptInt {
+func (s *GetOrdersOKItem) GetAccrual() OptFloat64 {
 	return s.Accrual
 }
 
@@ -73,7 +73,7 @@ func (s *GetOrdersOKItem) SetStatus(val OptString) {
 }
 
 // SetAccrual sets the value of Accrual.
-func (s *GetOrdersOKItem) SetAccrual(val OptInt) {
+func (s *GetOrdersOKItem) SetAccrual(val OptFloat64) {
 	s.Accrual = val
 }
 
@@ -182,38 +182,38 @@ func (o OptDateTime) Or(d time.Time) time.Time {
 	return d
 }
 
-// NewOptInt returns new OptInt with value set to v.
-func NewOptInt(v int) OptInt {
-	return OptInt{
+// NewOptFloat64 returns new OptFloat64 with value set to v.
+func NewOptFloat64(v float64) OptFloat64 {
+	return OptFloat64{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptInt is optional int.
-type OptInt struct {
-	Value int
+// OptFloat64 is optional float64.
+type OptFloat64 struct {
+	Value float64
 	Set   bool
 }
 
-// IsSet returns true if OptInt was set.
-func (o OptInt) IsSet() bool { return o.Set }
+// IsSet returns true if OptFloat64 was set.
+func (o OptFloat64) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptInt) Reset() {
-	var v int
+func (o *OptFloat64) Reset() {
+	var v float64
 	o.Value = v
 	o.Set = false
 }
 
 // SetTo sets value to v.
-func (o *OptInt) SetTo(v int) {
+func (o *OptFloat64) SetTo(v float64) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptInt) Get() (v int, ok bool) {
+func (o OptFloat64) Get() (v float64, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -221,7 +221,7 @@ func (o OptInt) Get() (v int, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptInt) Or(d int) int {
+func (o OptFloat64) Or(d float64) float64 {
 	if v, ok := o.Get(); ok {
 		return v
 	}

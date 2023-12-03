@@ -81,6 +81,9 @@ func decodeGetBalanceResponse(resp *http.Response) (res GetBalanceRes, _ error) 
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	case 204:
+		// Code 204.
+		return &GetBalanceNoContent{}, nil
 	case 401:
 		// Code 401.
 		return &GetBalanceUnauthorized{}, nil

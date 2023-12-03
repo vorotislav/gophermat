@@ -256,6 +256,10 @@ func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, e
 
 	err := s.pool.QueryRow(ctx, q, userID).Scan(&b.Current, &b.Withdraw)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Balance{}, models.ErrNotFound
+		}
+
 		return models.Balance{}, fmt.Errorf("cannot get balance: %w", err)
 	}
 
