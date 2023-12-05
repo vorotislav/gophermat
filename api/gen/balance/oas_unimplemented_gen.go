@@ -26,10 +26,3 @@ func (UnimplementedHandler) DeductPoints(ctx context.Context, req OptDeductPoint
 func (UnimplementedHandler) GetBalance(ctx context.Context) (r GetBalanceRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
-
-// GetWithdrawals implements getWithdrawals operation.
-//
-// GET /api/user/balance/withdrawals
-func (UnimplementedHandler) GetWithdrawals(ctx context.Context) (r GetWithdrawalsRes, _ error) {
-	return r, ht.ErrNotImplemented
-}

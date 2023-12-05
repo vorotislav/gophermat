@@ -25,7 +25,7 @@ import (
 type Invoker interface {
 	// GetWithdrawals invokes getWithdrawals operation.
 	//
-	// GET /api/user/balance/withdrawals
+	// GET /api/user/withdrawals
 	GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error)
 }
 
@@ -81,7 +81,7 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 
 // GetWithdrawals invokes getWithdrawals operation.
 //
-// GET /api/user/balance/withdrawals
+// GET /api/user/withdrawals
 func (c *Client) GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error) {
 	res, err := c.sendGetWithdrawals(ctx)
 	return res, err
@@ -91,7 +91,7 @@ func (c *Client) sendGetWithdrawals(ctx context.Context) (res GetWithdrawalsRes,
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getWithdrawals"),
 		semconv.HTTPMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/api/user/balance/withdrawals"),
+		semconv.HTTPRouteKey.String("/api/user/withdrawals"),
 	}
 
 	// Run stopwatch.
@@ -124,7 +124,7 @@ func (c *Client) sendGetWithdrawals(ctx context.Context) (res GetWithdrawalsRes,
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/api/user/balance/withdrawals"
+	pathParts[0] = "/api/user/withdrawals"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"

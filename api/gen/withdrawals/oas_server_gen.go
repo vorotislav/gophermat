@@ -10,7 +10,7 @@ import (
 type Handler interface {
 	// GetWithdrawals implements getWithdrawals operation.
 	//
-	// GET /api/user/balance/withdrawals
+	// GET /api/user/withdrawals
 	GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error)
 }
 

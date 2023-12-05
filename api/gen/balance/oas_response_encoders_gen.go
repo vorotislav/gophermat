@@ -63,29 +63,10 @@ func encodeGetBalanceResponse(response GetBalanceRes, w http.ResponseWriter, spa
 
 		return nil
 
-	case *GetBalanceUnauthorized:
-		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
-
-		return nil
-
-	case *GetBalanceInternalServerError:
-		w.WriteHeader(500)
-		span.SetStatus(codes.Error, http.StatusText(500))
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeGetWithdrawalsResponse(response GetWithdrawalsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *GetWithdrawalsOKApplicationJSON:
+	case *GetBalanceNoContent:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
+		w.WriteHeader(204)
+		span.SetStatus(codes.Ok, http.StatusText(204))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -95,19 +76,13 @@ func encodeGetWithdrawalsResponse(response GetWithdrawalsRes, w http.ResponseWri
 
 		return nil
 
-	case *GetWithdrawalsNoContent:
-		w.WriteHeader(204)
-		span.SetStatus(codes.Ok, http.StatusText(204))
-
-		return nil
-
-	case *GetWithdrawalsUnauthorized:
+	case *GetBalanceUnauthorized:
 		w.WriteHeader(401)
 		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
-	case *GetWithdrawalsInternalServerError:
+	case *GetBalanceInternalServerError:
 		w.WriteHeader(500)
 		span.SetStatus(codes.Error, http.StatusText(500))
 

@@ -162,7 +162,7 @@ func (s *Storage) SaveOrder(ctx context.Context, order models.Order) error {
 }
 
 func (s *Storage) GetOrders(ctx context.Context, userID int) ([]models.Order, error) {
-	q := "SELECT id, user_id, order_number, status, accrual, uploaded_at FROM orders WHERE user_id=$1 ORDER BY uploaded_at"
+	q := "SELECT id, user_id, order_number, status, accrual, uploaded_at FROM orders WHERE user_id=$1 and status is not null ORDER BY uploaded_at"
 
 	rows, err := s.pool.Query(ctx, q, userID)
 	if err != nil {
@@ -256,6 +256,10 @@ func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, e
 
 	err := s.pool.QueryRow(ctx, q, userID).Scan(&b.Current, &b.Withdraw)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Balance{}, models.ErrNotFound
+		}
+
 		return models.Balance{}, fmt.Errorf("cannot get balance: %w", err)
 	}
 
@@ -263,9 +267,10 @@ func (s *Storage) GetBalance(ctx context.Context, userID int) (models.Balance, e
 }
 
 func (s *Storage) UpdateBalance(ctx context.Context, balance models.Balance, userID int) error {
-	q := "UPDATE balance SET(current, withdraw) = ($1, $2) WHERE user_id = $3"
+	q := `INSERT INTO balance (user_id, current, withdraw) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE 
+			SET (current, withdraw) = ($2, $3)`
 
-	_, err := s.pool.Exec(ctx, q, balance.Current, balance.Withdraw, userID)
+	_, err := s.pool.Exec(ctx, q, userID, balance.Current, balance.Withdraw)
 	if err != nil {
 		return fmt.Errorf("cannot update balance: %w", err)
 	}

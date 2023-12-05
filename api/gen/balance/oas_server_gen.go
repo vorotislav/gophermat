@@ -16,10 +16,6 @@ type Handler interface {
 	//
 	// GET /api/user/balance
 	GetBalance(ctx context.Context) (GetBalanceRes, error)
-	// GetWithdrawals implements getWithdrawals operation.
-	//
-	// GET /api/user/balance/withdrawals
-	GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

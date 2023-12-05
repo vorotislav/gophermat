@@ -15,7 +15,6 @@ const (
 type gmart interface {
 	GetBalance(ctx context.Context) (models.Balance, error)
 	DeductPoints(ctx context.Context, withdraw models.BalanceWithdraw) error
-	GetWithdrawals(ctx context.Context) ([]models.BalanceWithdrawal, error)
 }
 
 type Handler struct {
@@ -55,35 +54,15 @@ func (h *Handler) DeductPoints(ctx context.Context, req api.OptDeductPointsReq) 
 func (h *Handler) GetBalance(ctx context.Context) (api.GetBalanceRes, error) {
 	balance, err := h.gmart.GetBalance(ctx)
 	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			return &api.GetBalanceNoContent{}, nil
+		}
+
 		return &api.GetBalanceInternalServerError{}, err
 	}
 
 	return &api.GetBalanceOK{
-		Current:   api.NewOptFloat64(float64(balance.Current / 100)),
-		Withdrawn: api.NewOptInt(balance.Withdraw),
+		Current:   api.NewOptFloat64(float64(balance.Current) / 100),
+		Withdrawn: api.NewOptFloat64(float64(balance.Withdraw) / 100),
 	}, nil
-}
-
-func (h *Handler) GetWithdrawals(ctx context.Context) (api.GetWithdrawalsRes, error) {
-	drawals, err := h.gmart.GetWithdrawals(ctx)
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			return &api.GetWithdrawalsNoContent{}, nil
-		}
-
-		return &api.GetWithdrawalsInternalServerError{}, err
-	}
-
-	result := make(api.GetWithdrawalsOKApplicationJSON, 0, len(drawals))
-	for _, d := range drawals {
-		r := api.GetWithdrawalsOKItem{
-			Order:       api.NewOptString(d.Order),
-			Sum:         api.NewOptFloat64(float64(d.Sum / 100)),
-			ProcessedAt: api.NewOptDateTime(d.ProcessedAt),
-		}
-
-		result = append(result, r)
-	}
-
-	return &result, nil
 }

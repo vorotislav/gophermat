@@ -4,7 +4,3 @@ package api
 type DeductPointsRes interface {
 	deductPointsRes()
 }
-
-type GetWithdrawalsRes interface {
-	getWithdrawalsRes()
-}

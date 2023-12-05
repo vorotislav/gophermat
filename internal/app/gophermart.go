@@ -6,6 +6,7 @@ import (
 	"github.com/alitto/pond"
 	"github.com/go-faster/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"gophermat/internal/crypt"
 	"gophermat/internal/luhn"
 	"strconv"
@@ -15,13 +16,15 @@ import (
 )
 
 var (
-	ErrTokenPayload = errors.New("cannot get token payload from context")
+	errTokenPayload = errors.New("cannot get token payload from context")
+	errProcessing   = errors.New("processing order error")
 )
 
 const (
 	tickerDuration = time.Second * 2
 	maxWorkers     = 10
 	maxCapacity    = 50
+	newStatusOrder = "NEW"
 )
 
 type storage interface {
@@ -53,6 +56,7 @@ type GMart struct {
 	client  accrualClient
 	doneCh  chan struct{}
 	pool    *pond.WorkerPool
+	eg      errgroup.Group
 }
 
 func NewGMart(log *zap.Logger, auth authorizer, storage storage, ac accrualClient) *GMart {
@@ -63,9 +67,17 @@ func NewGMart(log *zap.Logger, auth authorizer, storage storage, ac accrualClien
 		client:  ac,
 		doneCh:  make(chan struct{}),
 		pool:    pond.New(maxWorkers, maxCapacity),
+		eg:      errgroup.Group{},
 	}
 
-	go processingAccrualOrders(log, storage, ac, gm.doneCh, gm.pool)
+	gm.eg.Go(func() error {
+		err := processingAccrualOrders(log, storage, ac, gm.doneCh, gm.pool)
+		if err != nil {
+			return fmt.Errorf("%w: %w", errProcessing, err)
+		}
+
+		return nil
+	})
 
 	return gm
 }
@@ -74,6 +86,9 @@ func (gm *GMart) Stop() {
 	gm.log.Info("GMart stop. close channel and pool")
 	close(gm.doneCh)
 	gm.pool.Stop()
+	if err := gm.eg.Wait(); err != nil {
+		gm.log.Error("cannot wait goroutine finish", zap.Error(err))
+	}
 }
 
 func (gm *GMart) RegisterUser(ctx context.Context, user models.User) (string, error) {
@@ -167,7 +182,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 
 	// проверяем номер заказа по алгоритму Луна
 	if ok := luhn.Valid(on); !ok {
-		gm.log.Error("order number is not correct on luhn")
+		gm.log.Error("order number is not correct on luhn", zap.String("order number", orderNumber))
 
 		return fmt.Errorf("%w: order number is not correct on luhn", models.ErrInvalidOrderNumber)
 	}
@@ -183,7 +198,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	// проверяем номер заказа в репозитории
 	order, err := gm.storage.GetOrder(ctx, orderNumber)
 	if err == nil {
-		gm.log.Error("cannot get order", zap.Error(err))
+		gm.log.Info("the order already exists", zap.String("number", orderNumber))
 
 		if order.UserID == tokenPayload.UserID {
 			return models.ErrOrderUploaded
@@ -195,6 +210,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	o := models.Order{
 		UserID:     tokenPayload.UserID,
 		Number:     orderNumber,
+		Status:     newStatusOrder,
 		UploadedAt: time.Now(),
 	}
 
@@ -313,12 +329,12 @@ func (gm *GMart) GetWithdrawals(ctx context.Context) ([]models.BalanceWithdrawal
 func payloadFromContext(ctx context.Context) (models.TokenPayload, error) {
 	value := ctx.Value(models.CtxTokenPayload{})
 	if value == nil {
-		return models.TokenPayload{}, ErrTokenPayload
+		return models.TokenPayload{}, errTokenPayload
 	}
 
 	tokenPayload, ok := value.(models.TokenPayload)
 	if !ok {
-		return models.TokenPayload{}, ErrTokenPayload
+		return models.TokenPayload{}, errTokenPayload
 	}
 
 	return tokenPayload, nil
@@ -329,13 +345,13 @@ func processingAccrualOrders(
 	store storage,
 	client accrualClient,
 	doneCh chan struct{},
-	pool *pond.WorkerPool) {
+	pool *pond.WorkerPool) error {
 	tick := time.NewTicker(tickerDuration)
 
 	for {
 		select {
 		case <-doneCh:
-			return
+			return nil
 		case <-tick.C:
 			{
 				orders, err := store.GetNotProcessOrders()
@@ -384,17 +400,14 @@ func processOrder(log *zap.Logger, store storage, client accrualClient, order mo
 		return
 	}
 
-	log.Info("order successful updated", zap.String("order number", order.Number))
-
-	if accrual.Accrual == 0 {
-		return
-	}
+	log.Info("order successful updated",
+		zap.String("order number", order.Number),
+		zap.String("status", accrual.Status),
+		zap.Float32("accrual", accrual.Accrual))
 
 	balance, err := store.GetBalance(ctx, order.UserID)
 	if err != nil {
-		log.Error("cannot get balance", zap.Error(err))
-
-		return
+		log.Debug("cannot get balance", zap.Error(err))
 	}
 
 	err = store.UpdateBalance(ctx, models.Balance{

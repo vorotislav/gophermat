@@ -31,10 +31,6 @@ type Invoker interface {
 	//
 	// GET /api/user/balance
 	GetBalance(ctx context.Context) (GetBalanceRes, error)
-	// GetWithdrawals invokes getWithdrawals operation.
-	//
-	// GET /api/user/balance/withdrawals
-	GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error)
 }
 
 // Client implements OAS client.
@@ -289,109 +285,6 @@ func (c *Client) sendGetBalance(ctx context.Context) (res GetBalanceRes, err err
 
 	stage = "DecodeResponse"
 	result, err := decodeGetBalanceResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// GetWithdrawals invokes getWithdrawals operation.
-//
-// GET /api/user/balance/withdrawals
-func (c *Client) GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error) {
-	res, err := c.sendGetWithdrawals(ctx)
-	return res, err
-}
-
-func (c *Client) sendGetWithdrawals(ctx context.Context) (res GetWithdrawalsRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getWithdrawals"),
-		semconv.HTTPMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/api/user/balance/withdrawals"),
-	}
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(float64(elapsedDuration)/float64(time.Millisecond)), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, "GetWithdrawals",
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/api/user/balance/withdrawals"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, "GetWithdrawals", r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	defer resp.Body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeGetWithdrawalsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

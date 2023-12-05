@@ -12,10 +12,6 @@ type Handler interface {
 	//
 	// POST /api/user/balance/withdraw
 	DeductPoints(ctx context.Context, req OptDeductPointsReq) (DeductPointsRes, error)
-	// GetWithdrawals implements getWithdrawals operation.
-	//
-	// GET /api/user/balance/withdrawals
-	GetWithdrawals(ctx context.Context) (GetWithdrawalsRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

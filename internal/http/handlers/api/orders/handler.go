@@ -40,12 +40,14 @@ func (h *Handler) GetOrders(ctx context.Context) (api.GetOrdersRes, error) {
 		return &api.GetOrdersInternalServerError{}, err
 	}
 
+	h.log.Debug("get orders", zap.Any("orders", orders))
+
 	result := make(api.GetOrdersOKApplicationJSON, 0, len(orders))
 	for _, o := range orders {
 		ro := api.GetOrdersOKItem{
 			Number:     api.NewOptString(o.Number),
 			Status:     api.NewOptString(o.Status),
-			Accrual:    api.NewOptInt(o.Accrual),
+			Accrual:    api.NewOptFloat64(float64(o.Accrual) / 100),
 			UploadedAt: api.NewOptDateTime(o.UploadedAt),
 		}
 
