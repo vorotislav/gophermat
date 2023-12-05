@@ -24,6 +24,7 @@ const (
 	tickerDuration = time.Second * 2
 	maxWorkers     = 10
 	maxCapacity    = 50
+	newStatusOrder = "NEW"
 )
 
 type storage interface {
@@ -86,7 +87,7 @@ func (gm *GMart) Stop() {
 	close(gm.doneCh)
 	gm.pool.Stop()
 	if err := gm.eg.Wait(); err != nil {
-		gm.log.Error("cannot wait error group", zap.Error(err))
+		gm.log.Error("cannot wait goroutine finish", zap.Error(err))
 	}
 }
 
@@ -209,7 +210,7 @@ func (gm *GMart) LoadOrder(ctx context.Context, orderNumber string) error {
 	o := models.Order{
 		UserID:     tokenPayload.UserID,
 		Number:     orderNumber,
-		Status:     "NEW",
+		Status:     newStatusOrder,
 		UploadedAt: time.Now(),
 	}
 
